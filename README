@@ -11,4 +11,6 @@ except update an HTML dashboard.
 Ultimately it should support also RDFa, microformats, Turtle etc; for now
 the parsing is wired to expect rdf/xml.
 
+See notes in the code for details.
+
 Dan <danbri@danbri.org>
