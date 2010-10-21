@@ -179,10 +179,10 @@ function showpic(u) {
  img.src= u;
  img.height=150;
 
- if (d.firstChild != null) {
+try {
     print("replacing image for "+rand_no);
     d.replaceChild(d.firstChild, img);
- } else {
+ } catch(e) {
      print("creating first image for "+rand_no);
      d.appendChild(img);
  }
