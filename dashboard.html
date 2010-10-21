@@ -170,11 +170,23 @@ function crawl(uri) {
     return;
   }
   print('crawling '+uri);
-  var data = fetch(uri);
+  try {
+    var data = fetch(uri);
+  }
+  catch(e) {
+    print ("Error fetching data from "+uri+": "+e);
+    return;
+  }
   print ("Got data from " + uri);
   var kb = new $rdf.IndexedFormula(); 
   var p = new $rdf.RDFParser(kb);
-  p.parse(data, uri, uri);
+  try {
+    p.parse(data, uri, uri);
+  }
+  catch (e) {
+    print ("Parse error on "+uri+": "+e);
+    return;
+  }
   ingest(kb,uri);  
 }
 
