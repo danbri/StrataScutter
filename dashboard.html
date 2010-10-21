@@ -202,12 +202,20 @@ var fetch = cutil.makeBoundedFunction(function(uri) {
 
 
 print("Initializing...");
-setup();
+waitfor {
+  setup();
+}
+or {
+  require('dom').waitforEvent('stop', 'click');
+  print("Cancelled");
+}
+print("All done");
 
 </script> 
 </head> 
 
-<body> 
+<body>
+<button id="stop">Stop</button>
 <div style="background: #eeddff">
 docs: <span id="docs-count"></span> 
 factoids: <span id="triples-count"></span> 
