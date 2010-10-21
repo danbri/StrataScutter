@@ -33,7 +33,9 @@ var http = require("http");
 var cutil = require('cutil');
 
 function print(s) {
-  document.getElementById("output").innerHTML += s + " <br/>";
+  var div = document.createElement('div');
+  div.innerHTML = s;
+  document.getElementById("output").appendChild(div);
 }
 
 
@@ -154,10 +156,7 @@ function showpic(u) {
  var img = document.createElement('img');
  img.src= u;
  img.width=100;
- var aTag = document.createElement('a');
- aTag.href = "#";
  p.appendChild(img);
- document.body.appendChild(aTag); // *shrugs*
 }
 
 function updateDashboard() {
