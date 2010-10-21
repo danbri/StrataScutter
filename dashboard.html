@@ -38,6 +38,7 @@ function print(s) {
 
 
 var counters = { docs: 0, people: 0, triples: 0, sources: 0, images: 0 };
+var seen = { uri: {} /* could expand this to remove duplicates in people,images, etc: people: {}, images: {} */ };
 
 function setup() { 
 
@@ -57,7 +58,7 @@ function setup() {
 
 
   print("setting waitForAll on plan of "+plan);
-  cutil.waitforAll(fetch, plan);
+  cutil.waitforAll(crawl, plan);
 }
 
 function update_counter(name, by) {
@@ -65,6 +66,14 @@ function update_counter(name, by) {
    counters[name] += by;
 //  print("Docs: "+counters['docs']+" Triples: "+counters['triples']);
   document.getElementById(name +'-count').innerHTML=counters[name];
+}
+
+function have_seen(type, value) {
+  if (!seen[type][value]) {
+    seen[type][value] = true;
+    return false; // not seen yet (well, we have now :-) )
+  }
+  return true; // seen before
 }
 
 // see also $rdf.IndexedFormula  in tabulator/chrome/content/js/rdf/rdflib.js
@@ -94,6 +103,9 @@ function ingest(kb,uri) {
     // print("Got name: "+li.textContent);
     document.getElementById('objects').appendChild(li); 
   }
+  // crawl docs found here:
+  cutil.waitforAll(crawl, elsewhere);
+  
   // todo: stash this in local sql ...
 
 }  
@@ -152,18 +164,27 @@ function updateDashboard() {
  // document.getElementById("dashboard").innerHTML == counter;
 }
 
-function fetch(uri) {
-  print('fetching '+uri);    
-  var p = 'util/p.php?u=';
-  var u = p + uri;
-  var data = http.xml( u );
-  print ("Got data from " + u);
+function crawl(uri) {
+  if (have_seen('uri', uri)) {
+    print('not crawling '+uri+' again');
+    return;
+  }
+  print('crawling '+uri);
+  var data = fetch(uri);
+  print ("Got data from " + uri);
   var kb = new $rdf.IndexedFormula(); 
   var p = new $rdf.RDFParser(kb);
   p.parse(data, uri, uri);
-  ingest(kb,uri);
-  return(kb); // useful/useless?
+  ingest(kb,uri);  
 }
+
+// To make this super robust, let's limit number of concurrent http
+// connections to 10:
+var fetch = cutil.makeBoundedFunction(function(uri) {
+  print('fetching '+uri);
+  return http.xml(["util/p.php", {u:uri}]);
+}, 10);
+
 
 // storage 
 // http://www.rajdeepd.com/articles/chrome/localstrg/LocalStorageSample.htm#section3
