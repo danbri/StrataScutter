@@ -181,7 +181,7 @@ function showpic(u) {
 
 try {
     print("replacing image for "+rand_no);
-    d.replaceChild(d.firstChild, img);
+    d.replaceChild(img, d.firstChild);
  } catch(e) {
      print("creating first image for "+rand_no);
      d.appendChild(img);
