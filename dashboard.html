@@ -1,0 +1,141 @@
+<!DOCTYPE html> 
+<html xmlns="http://www.w3.org/1999/xhtml"><head><script src="oni-apollo.js"></script><script src="tabulator/chrome/content/js/rdf/rdflib.js" type="application/javascript"></script><title>StrataScutter</title>
+<script type="text/sjs">  
+
+// This is a skeleton towards a FOAF / Linked Data crawler in Javascript.
+// TODO:
+// * RDFa parser, http://code.google.com/p/rdfquery/source/browse/trunk/jquery.rdfa.js
+// * be a real crawler, see also view-source:http://83.84.224.61/workbench/crawler.html
+
+require("jquery-binding").install();
+var http = require("http");
+var common = require('common');
+var cutil = require('cutil');
+var http = require('http');
+var parseUri = require('parseuri').parseUri;
+
+var c = require('debug').console({collapsed:true});
+c.focus();
+c.log("Usage: crawl(\"http://danbri.org/foaf.rdf\")");
+
+
+function print(s) {
+  document.getElementById("output").innerHTML += s + " <br/>";
+}
+
+
+var counters = { docs: 0, people: 0, triples: 0, sources: 0 };
+
+function setup() { 
+
+  var plan = [ 
+	'http://identi.ca/danbri/foaf', // biggest, typically slowest
+ 	'http://danbri.org/foaf.rdf', 
+	'http://www.tom.sfc.keio.ac.jp/~hagino/foaf.rdf', 
+	'http://www.w3.org/People/Berners-Lee/card.rdf', 
+	'http://swordfish.rdfweb.org/people/libby/rdfweb/webwho.xrdf'
+	];
+// no workie?        'http://dig.csail.mit.edu/People/kennyluck#I' 
+  print("setting waitForAll on plan of "+plan);
+  cutil.waitforAll(fetch, plan);
+}
+
+function update_counter(name, by) {
+//  print("Updated counter "+name+" by "+by);
+   counters[name] += by;
+//  print("Docs: "+counters['docs']+" Triples: "+counters['triples']);
+  document.getElementById(name +'-count').innerHTML=counters[name];
+}
+
+// see also $rdf.IndexedFormula  in tabulator/chrome/content/js/rdf/rdflib.js
+
+
+function ingest(kb,uri) {
+
+  hold(10); // browser ui is a bit sticky, would this help? probably not
+
+  print("Ingesting new kb of length " + kb.statements.length + " from " +uri);
+
+  update_counter('docs', 1);
+  update_counter('triples', kb.statements.length);
+
+  var results = kb.statementsMatching(undefined, new $rdf.Symbol('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), new $rdf.Symbol('http://xmlns.com/foaf/0.1/Person'));
+  for (var i = 0; i < results.length; i++) { 
+    // print("Got a person: "+results[i].subject);
+    update_counter('people',1);
+  }
+  var elsewhere = seeAlsos(kb);
+  print("New places to look: "+elsewhere);
+
+  // scan results
+  var results = kb.statementsMatching(undefined,     new $rdf.Symbol('http://xmlns.com/foaf/0.1/name'), undefined  );
+  for (var i = 0; i < results.length; i++) { 
+    li = document.createElement('li'); 
+    li.textContent = results[i].object; 
+    // print("Got name: "+li.textContent);
+    document.getElementById('objects').appendChild(li); 
+  }
+  // todo: stash this in local sql ...
+
+}  
+
+function seeAlsos(kb) {
+  var r = [];
+  var results = kb.statementsMatching(undefined,     new $rdf.Symbol('http://www.w3.org/2000/01/rdf-schema#seeAlso'), undefined  );
+  for (var i = 0; i < results.length; i++) { 
+    //print("result: sub: "+ results[i].subject.uri + " pred: " + results[i].predicate.uri + " obj: " + results[i].object.uri );
+    r.push(results[i].object.uri);
+    update_counter('sources',1); // assumes each is new
+  }
+  return(r);
+}
+
+function updateDashboard() {
+ // document.getElementById("dashboard").innerHTML == counter;
+}
+
+function fetch(uri) {
+  print('fetching '+uri);    
+  var p = 'util/p.php?u=';
+  var u = p + uri;
+  var data = http.xml( u );
+  print ("Got data from " + u);
+  var kb = new $rdf.IndexedFormula(); 
+  var p = new $rdf.RDFParser(kb);
+  p.parse(data, uri, uri);
+  ingest(kb,uri);
+  return(kb); // useful/useless?
+}
+
+// storage 
+// http://www.rajdeepd.com/articles/chrome/localstrg/LocalStorageSample.htm#section3
+
+
+print("Initializing...");
+setup();
+
+</script> 
+</head> 
+
+<body> 
+<div style="background: #eeddff">
+docs: <span id="docs-count"></span> 
+triples: <span id="triples-count"></span> 
+people: <span id="people-count"></span> 
+sources: <span id="sources-count"></span> 
+</div>
+<hr />
+
+<p>The js needed here comes from : hg clone http://dig.csail.mit.edu/hg/tabulator</p>
+<p>possible future extensions: make a foaf crawler...</p>
+
+
+<div style="background: #ffddff" id="output"></div>
+
+
+<h2>People in a FOAF File</h2> 
+<ul id="objects"> 
+</ul> 
+
+</body> 
+</html> 
