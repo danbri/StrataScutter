@@ -209,8 +209,7 @@ function crawl(uri) {
   ingest(kb,uri);  
 }
 
-// To make this super robust, let's limit number of concurrent http
-// connections to 10:
+// To make this super robust, let's limit number of concurrent http connections to 10:
 var fetch = cutil.makeBoundedFunction(function(uri) {
   updateStatus('fetching '+uri);
   document.getElementById('url').innerHTML = uri;
@@ -224,11 +223,7 @@ var fetch = cutil.makeBoundedFunction(function(uri) {
   //  return http.xml(["util/p.php", {u:uri}]);
 }, 100);
 
-
-// storage 
-// http://www.rajdeepd.com/articles/chrome/localstrg/LocalStorageSample.htm#section3
-
-
+// storage http://www.rajdeepd.com/articles/chrome/localstrg/LocalStorageSample.htm#section3
 print("Initializing...");
 waitfor {
   setup();
@@ -240,32 +235,32 @@ or {
 print("All done");
 
 </script> 
+<style type="text/css">
+div.floating-menu {position:fixed;background:#eeddff;border:3px solid #ffcc00;margin:10 2em;padding:3px;width:90%;z-index:100;}
+</style>
 </head> 
 
 <body>
-<button id="stop">Stop</button>
 
-<div style="background: #eeddff">
-docs: <span id="docs-count"></span> 
-factoids: <span id="triples-count"></span> 
-people: <span id="people-count"></span> 
-sources: <span id="sources-count"></span> 
-images: <span id="images-count"></span> 
-| 
-url: <span id="url"></span> <br/>
-status: <span id="status"></span>
-time: <span id="av-req-duration"></span>
+<div class="floating-menu">
+ <button id="stop">Stop</button>
+ <div style="background: #eeddff">
+ docs: <span id="docs-count"></span> 
+ factoids: <span id="triples-count"></span> 
+ people: <span id="people-count"></span> 
+ queue: <span id="sources-count"></span> 
+ images: <span id="images-count"></span> <br/> 
+ url: <span id="url"></span> <br/>
+ status: <span id="status"></span>
+ time: <span id="av-req-duration"></span>
  </div>
+</div>
 <hr />
 <div id="pic"></div><hr/>
 
 
 
 <div style="background: #ffddff" id="output"></div>
-
-<h2>People in a FOAF File</h2> 
-<ul id="objects"> 
-</ul> 
 
 </body> 
 </html> 
