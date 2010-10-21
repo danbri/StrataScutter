@@ -170,11 +170,22 @@ function images(kb) {
 }
 
 function showpic(u) {
- var p = document.getElementById("pic");
+ var rand_no = Math.random();
+ rand_no = rand_no * 10;
+ rand_no = Math.ceil(rand_no);
  var img = document.createElement('img');
+ var d = document.getElementById('g'+rand_no);
+ print ("assigning image "+u+ " to gallery slot g"+rand_no);
  img.src= u;
- img.width=100;
- p.appendChild(img);
+ img.height=150;
+
+ if (d.firstChild != null) {
+    print("replacing image for "+rand_no);
+    d.replaceChild(d.firstChild, img);
+ } else {
+     print("creating first image for "+rand_no);
+     d.appendChild(img);
+ }
 }
 
 function updateDashboard() {
@@ -256,8 +267,32 @@ div.floating-menu {position:fixed;background:#eeddff;border:3px solid #ffcc00;ma
  </div>
 </div>
 <hr />
-<div id="pic"></div><hr/>
 
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+
+<div class="gallery" style="width: 100%">
+ <span id="g1"></span>
+ <span id="g2"></span>
+ <span id="g3"></span>
+ <span id="g4"></span>
+ <span id="g5"></span>
+ <span id="g6"></span>
+ <span id="g7"></span>
+ <span id="g8"></span>
+ <span id="g9"></span>
+ <span id="g10"></span>
+  <!-- yeah yeah, I know... -->
+</div>
+
+
+<div><style="background: #ffddff" id="output"></div>
+<div id="pic"></div><hr/>
 
 
 <div style="background: #ffddff" id="output"></div>
