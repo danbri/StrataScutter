@@ -33,6 +33,14 @@ SJS summary:
 var http = require("http");
 var cutil = require('cutil');
 
+
+
+
+var aggregateTime = 0, requestCount = 0; // for timings
+
+
+
+
 function print(s) {
   var div = document.createElement('div');
   div.innerHTML = s;
@@ -206,8 +214,15 @@ function crawl(uri) {
 var fetch = cutil.makeBoundedFunction(function(uri) {
   updateStatus('fetching '+uri);
   document.getElementById('url').innerHTML = uri;
-  return http.xml(["util/p.php", {u:uri}]);
-}, 10);
+
+  var start = new Date();
+  var rv =  http.xml(["util/p.php", {u:uri}]);
+  aggregateTime += (new Date() - start);
+  ++requestCount;
+  document.getElementById("av-req-duration").innerHTML = aggregateTime/requestCount;
+  return rv;
+  //  return http.xml(["util/p.php", {u:uri}]);
+}, 100);
 
 
 // storage 
@@ -239,6 +254,7 @@ images: <span id="images-count"></span>
 | 
 url: <span id="url"></span> <br/>
 status: <span id="status"></span>
+time: <span id="av-req-duration"></span>
  </div>
 <hr />
 <div id="pic"></div><hr/>
