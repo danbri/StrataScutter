@@ -47,7 +47,7 @@ function print(s) {
 }
 
 
-var counters = { docs: 0, people: 0, triples: 0, sources: 0 };
+var counters = { docs: 0, people: 0, triples: 0, sources: 0, images: 0 };
 
 function setup() { 
 
@@ -88,8 +88,9 @@ function ingest(kb,uri) {
     update_counter('people',1);
   }
   var elsewhere = seeAlsos(kb);
+  var mugs = images(kb);
   print("New places to look: "+elsewhere);
-
+  print("Images: "+mugs);
   // scan results
   var results = kb.statementsMatching(undefined,     new $rdf.Symbol('http://xmlns.com/foaf/0.1/name'), undefined  );
   for (var i = 0; i < results.length; i++) { 
@@ -111,6 +112,45 @@ function seeAlsos(kb) {
     update_counter('sources',1); // assumes each is new
   }
   return(r);
+}
+
+
+function images(kb) {
+  var r = [];
+  var results = kb.statementsMatching(undefined,     new $rdf.Symbol('http://xmlns.com/foaf/0.1/img'), undefined  );
+  for (var i = 0; i < results.length; i++) { 
+    r.push(results[i].object.uri);
+    update_counter('images',1); // assumes each is new
+    showpic(results[i].object.uri);
+  }
+
+  var results = kb.statementsMatching(undefined,     new $rdf.Symbol('http://xmlns.com/foaf/0.1/depicts'), undefined  );
+  for (var i = 0; i < results.length; i++) { 
+    r.push(results[i].subject.uri);
+    update_counter('images',1); // assumes each is new
+    showpic(results[i].suject.uri);
+  }
+
+  var results = kb.statementsMatching(undefined,     new $rdf.Symbol('http://xmlns.com/foaf/0.1/depiction'), undefined  );
+  for (var i = 0; i < results.length; i++) { 
+    r.push(results[i].object.uri);
+    update_counter('images',1); // assumes each is new
+    showpic(results[i].object.uri);
+  }
+
+
+  return(r);
+}
+
+function showpic(u) {
+ var p = document.getElementById("pic");
+ var img = document.createElement('img');
+ img.src= u;
+ img.width=100;
+ var aTag = document.createElement('a');
+ aTag.href = "#";
+ p.appendChild(img);
+ document.body.appendChild(aTag); // *shrugs*
 }
 
 function updateDashboard() {
@@ -146,8 +186,11 @@ docs: <span id="docs-count"></span>
 triples: <span id="triples-count"></span> 
 people: <span id="people-count"></span> 
 sources: <span id="sources-count"></span> 
+images: <span id="images-count"></span> 
 </div>
 <hr />
+<div id="pic"></div><hr/>
+
 
 <p>The js needed here comes from : hg clone http://dig.csail.mit.edu/hg/tabulator</p>
 <p>possible future extensions: make a foaf crawler...</p>
