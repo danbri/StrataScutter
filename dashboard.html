@@ -7,6 +7,29 @@
 // * RDFa parser, http://code.google.com/p/rdfquery/source/browse/trunk/jquery.rdfa.js
 // * be a real crawler, see also view-source:http://83.84.224.61/workbench/crawler.html
 
+/*
+ Note: this is written using http://stratifiedjs.org/ - an extension of Javascript 
+ that reduces the need for callback-based handling of concurrency in asynchronous apps.
+ - docs: http://stratifiedjs.org/sjsdocs
+ - interactive tutorial slides: http://stratifiedjs.org/presentations/OSCON2010/
+ - API modules: http://onilabs.com/api
+
+SJS summary: 
+ - these keywords have special meaning: hold, waitfor, and, or, resume, retract, using 
+ - the oni-appollo.js deals with this within normal Javascript Web browsers
+ - you get avoid creating lots of callbacks, which should lead to less spaghetti code
+ - SJS gives you high level controls over independent 'strata', only one of which is 
+   running at any time.
+ - best way to learn is to make local copy of tutorial slides (above) and tweak.
+*/
+
+/* Note: this uses Tabulator for RDF.
+ - their API is 'evolving...'
+ - I've copied the entire tabulator/ tree here for now; hopefully we need just a few files.
+ - 
+*/
+
+
 require("jquery-binding").install();
 var http = require("http");
 var common = require('common');
