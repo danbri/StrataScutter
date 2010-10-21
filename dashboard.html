@@ -26,7 +26,7 @@ SJS summary:
 /* Note: this uses Tabulator for RDF.
  - their API is 'evolving...'
  - I've copied the entire tabulator/ tree here for now; hopefully we need just a few files.
- - 
+ - The js needed here comes from : hg clone http://dig.csail.mit.edu/hg/tabulator
 */
 
 
@@ -56,9 +56,16 @@ function setup() {
  	'http://danbri.org/foaf.rdf', 
 	'http://www.tom.sfc.keio.ac.jp/~hagino/foaf.rdf', 
 	'http://www.w3.org/People/Berners-Lee/card.rdf', 
-	'http://swordfish.rdfweb.org/people/libby/rdfweb/webwho.xrdf'
+	'http://swordfish.rdfweb.org/people/libby/rdfweb/webwho.xrdf',
+        'http://www.ldodds.com/ldodds.rdf',
+	'http://www.openlinksw.com/dataspace/person/kidehen@openlinksw.com/about.rdf',
+
 	];
-// no workie?        'http://dig.csail.mit.edu/People/kennyluck#I' 
+
+// other syntaxes: http://rdfa sw-app.org/mic.xhtml
+//    turtle/n3        'http://dig.csail.mit.edu/People/kennyluck#I' 
+
+
   print("setting waitForAll on plan of "+plan);
   cutil.waitforAll(fetch, plan);
 }
@@ -192,12 +199,8 @@ images: <span id="images-count"></span>
 <div id="pic"></div><hr/>
 
 
-<p>The js needed here comes from : hg clone http://dig.csail.mit.edu/hg/tabulator</p>
-<p>possible future extensions: make a foaf crawler...</p>
-
 
 <div style="background: #ffddff" id="output"></div>
-
 
 <h2>People in a FOAF File</h2> 
 <ul id="objects"> 
