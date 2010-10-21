@@ -40,6 +40,11 @@ function print(s) {
   hold(10); // woah there cowboy... (calm down a bit, let browser have a life)
 }
 
+function updateStatus(s) {
+  var div = document.createElement('div');
+  document.getElementById("status").innerHTML = s;
+  hold(10); 
+}
 
 var counters = { docs: 0, people: 0, triples: 0, sources: 0, images: 0 };
 var seen = { uri: {} /* could expand this to remove duplicates in people,images, etc: people: {}, images: {} */ };
@@ -169,12 +174,13 @@ function updateDashboard() {
  // document.getElementById("dashboard").innerHTML == counter;
 }
 
+
 function crawl(uri) {
   if (have_seen('uri', uri)) {
-    print('not crawling '+uri+' again');
+    updateStatus('not crawling '+uri+' again');
     return;
   }
-//  print('crawling '+uri);
+  updateStatus('crawling '+uri);
   try {
     var data = fetch(uri);
   }
@@ -182,7 +188,7 @@ function crawl(uri) {
     print ("Error fetching data from "+uri+": "+e);
     return;
   }
-//  print ("Got data from " + uri);
+  updateStatus("Got data from " + uri);
   var kb = new $rdf.IndexedFormula(); 
   var p = new $rdf.RDFParser(kb);
   try {
@@ -198,7 +204,7 @@ function crawl(uri) {
 // To make this super robust, let's limit number of concurrent http
 // connections to 10:
 var fetch = cutil.makeBoundedFunction(function(uri) {
-//  print('fetching '+uri);
+  updateStatus('fetching '+uri);
   document.getElementById('url').innerHTML = uri;
   return http.xml(["util/p.php", {u:uri}]);
 }, 10);
@@ -231,7 +237,8 @@ people: <span id="people-count"></span>
 sources: <span id="sources-count"></span> 
 images: <span id="images-count"></span> 
 | 
-url: <span id="url"></span>
+url: <span id="url"></span> <br/>
+status: <span id="status"></span>
  </div>
 <hr />
 <div id="pic"></div><hr/>
