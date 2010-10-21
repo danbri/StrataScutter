@@ -37,6 +37,7 @@ function print(s) {
   var div = document.createElement('div');
   div.innerHTML = s;
   document.getElementById("output").appendChild(div);
+  hold(10); // woah there cowboy... (calm down a bit, let browser have a life)
 }
 
 
@@ -84,7 +85,7 @@ function have_seen(type, value) {
 
 function ingest(kb,uri) {
 
-  print("Ingesting new kb of length " + kb.statements.length + " from " +uri);
+//  print("Ingesting new kb of length " + kb.statements.length + " from " +uri);
 
   update_counter('docs', 1);
   update_counter('triples', kb.statements.length);
@@ -96,16 +97,20 @@ function ingest(kb,uri) {
   }
   var elsewhere = seeAlsos(kb);
   var mugs = images(kb);
-  print("New places to look: "+elsewhere);
-  print("Images: "+mugs);
-  // scan results
-  var results = kb.statementsMatching(undefined,     new $rdf.Symbol('http://xmlns.com/foaf/0.1/name'), undefined  );
+  //print("New places to look: "+elsewhere);
+  //print("Images: "+mugs);
+
+
+  /* 
+var results = kb.statementsMatching(undefined,     new $rdf.Symbol('http://xmlns.com/foaf/0.1/name'), undefined  );
   for (var i = 0; i < results.length; i++) { 
     li = document.createElement('li'); 
     li.textContent = results[i].object; 
     // print("Got name: "+li.textContent);
     document.getElementById('objects').appendChild(li); 
   }
+
+ */
   // crawl docs found here:
   cutil.waitforAll(crawl, elsewhere);
   
@@ -169,7 +174,7 @@ function crawl(uri) {
     print('not crawling '+uri+' again');
     return;
   }
-  print('crawling '+uri);
+//  print('crawling '+uri);
   try {
     var data = fetch(uri);
   }
@@ -177,7 +182,7 @@ function crawl(uri) {
     print ("Error fetching data from "+uri+": "+e);
     return;
   }
-  print ("Got data from " + uri);
+//  print ("Got data from " + uri);
   var kb = new $rdf.IndexedFormula(); 
   var p = new $rdf.RDFParser(kb);
   try {
@@ -193,7 +198,8 @@ function crawl(uri) {
 // To make this super robust, let's limit number of concurrent http
 // connections to 10:
 var fetch = cutil.makeBoundedFunction(function(uri) {
-  print('fetching '+uri);
+//  print('fetching '+uri);
+  document.getElementById('url').innerHTML = uri;
   return http.xml(["util/p.php", {u:uri}]);
 }, 10);
 
@@ -217,13 +223,16 @@ print("All done");
 
 <body>
 <button id="stop">Stop</button>
+
 <div style="background: #eeddff">
 docs: <span id="docs-count"></span> 
 factoids: <span id="triples-count"></span> 
 people: <span id="people-count"></span> 
 sources: <span id="sources-count"></span> 
 images: <span id="images-count"></span> 
-</div>
+| 
+url: <span id="url"></span>
+ </div>
 <hr />
 <div id="pic"></div><hr/>
 
