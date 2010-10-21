@@ -175,15 +175,15 @@ function showpic(u) {
  rand_no = Math.ceil(rand_no);
  var img = document.createElement('img');
  var d = document.getElementById('g'+rand_no);
- print ("assigning image "+u+ " to gallery slot g"+rand_no);
+ // print ("assigning image "+u+ " to gallery slot g"+rand_no);
  img.src= u;
  img.height=150;
 
 try {
-    print("replacing image for "+rand_no);
+    // print("replacing image for "+rand_no);
     d.replaceChild(img, d.firstChild);
  } catch(e) {
-     print("creating first image for "+rand_no);
+     // print("creating first image for "+rand_no);
      d.appendChild(img);
  }
 }
