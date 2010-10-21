@@ -29,18 +29,8 @@ SJS summary:
  - The js needed here comes from : hg clone http://dig.csail.mit.edu/hg/tabulator
 */
 
-
-require("jquery-binding").install();
 var http = require("http");
-var common = require('common');
 var cutil = require('cutil');
-var http = require('http');
-var parseUri = require('parseuri').parseUri;
-
-var c = require('debug').console({collapsed:true});
-c.focus();
-c.log("Usage: crawl(\"http://danbri.org/foaf.rdf\")");
-
 
 function print(s) {
   document.getElementById("output").innerHTML += s + " <br/>";
@@ -81,8 +71,6 @@ function update_counter(name, by) {
 
 
 function ingest(kb,uri) {
-
-  hold(10); // browser ui is a bit sticky, would this help? probably not
 
   print("Ingesting new kb of length " + kb.statements.length + " from " +uri);
 
@@ -135,7 +123,7 @@ function images(kb) {
   for (var i = 0; i < results.length; i++) { 
     r.push(results[i].subject.uri);
     update_counter('images',1); // assumes each is new
-    showpic(results[i].suject.uri);
+    showpic(results[i].subject.uri);
   }
 
   var results = kb.statementsMatching(undefined,     new $rdf.Symbol('http://xmlns.com/foaf/0.1/depiction'), undefined  );
