@@ -225,7 +225,15 @@ var fetch = cutil.makeBoundedFunction(function(uri) {
   document.getElementById('url').innerHTML = uri;
 
   var start = new Date();
-  var rv =  http.xml(["util/p.php", {u:uri}]);
+
+  waitfor {
+    var rv =  http.xml(["util/p.php", {u:uri}]);
+  }
+  or {
+    hold(8000); // 8s timeout
+    throw("timeout for url "+uri);
+  }
+
   aggregateTime += (new Date() - start);
   ++requestCount;
   document.getElementById("av-req-duration").innerHTML = aggregateTime/requestCount;
