@@ -6,6 +6,9 @@
 // TODO:
 // * RDFa parser, http://code.google.com/p/rdfquery/source/browse/trunk/jquery.rdfa.js
 // * be a real crawler, see also view-source:http://83.84.224.61/workbench/crawler.html
+// * add Google SGAPI lookups, eg.
+//    http://socialgraph.apis.google.com/lookup?q=http://danbri.org/foaf.rdf&fme=1&edi=1&edo=1&pretty=1&callback=
+
 
 /*
  Note: this is written using http://stratifiedjs.org/ - an extension of Javascript 
@@ -196,7 +199,7 @@ function images(kb) {
 
 function showpic(u) {
 
- if (matches_skip_list(u) { return; } // no missing photos, http etc if we happen to know better. 
+ if (matches_skip_list(u)) { return; } // no missing photos, http etc if we happen to know better. 
 
  var rand_no = Math.random();
  rand_no = rand_no * 10;
