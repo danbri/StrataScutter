@@ -38,7 +38,16 @@ var cutil = require('cutil');
 
 var aggregateTime = 0, requestCount = 0; // for timings
 
-
+var skip_list = [ 'kwark.org', // wonky data
+		'asemantics.com', // missing sites 
+		'impressive.net', // http auth (need to test handling)
+		'lagrange.net',   // ditto
+		'geocities.com',  // RIP
+		'picdiary.com',   // awol
+		'localhost',      // 
+                '127.0.0.1',      //
+		'kwark.yi.org',   //
+		];    
 
 
 function print(s) {
@@ -73,7 +82,7 @@ function setup() {
 //    turtle/n3        'http://dig.csail.mit.edu/People/kennyluck#I' 
 
 
-  print("setting waitForAll on plan of "+plan);
+  updateStatus("setting waitForAll on plan of "+plan);
   cutil.waitforAll(crawl, plan);
 }
 
@@ -90,6 +99,22 @@ function have_seen(type, value) {
     return false; // not seen yet (well, we have now :-) )
   }
   return true; // seen before
+}
+
+
+
+
+function matches_skip_list(u) {
+  if (!u) { return; }
+  for (var i = 0; i < skip_list.length; i++) {
+   // print("checking "+u+" against "+skip_list[i]);
+    if ( u.indexOf( skip_list[i]) != -1) 
+    { 
+      // print("on skiplist: "+u +" ~ "+skip_list[i]);
+      return true; 
+    }
+  }
+  return false; 
 }
 
 // see also $rdf.IndexedFormula  in tabulator/chrome/content/js/rdf/rdflib.js
@@ -136,7 +161,7 @@ function seeAlsos(kb) {
   for (var i = 0; i < results.length; i++) { 
     //print("result: sub: "+ results[i].subject.uri + " pred: " + results[i].predicate.uri + " obj: " + results[i].object.uri );
     r.push(results[i].object.uri);
-    update_counter('sources',1); // assumes each is new
+    // update_counter('sources',1); // assumes each is new
   }
   return(r);
 }
@@ -198,12 +223,19 @@ function crawl(uri) {
     updateStatus('not crawling '+uri+' again');
     return;
   }
+
+
+  if (matches_skip_list(uri)) {
+    updateStatus('not crawling '+uri+' - on the skip_list');
+    return;
+  }
+
   updateStatus('crawling '+uri);
   try {
     var data = fetch(uri);
   }
   catch(e) {
-    print ("Error fetching data from "+uri+": "+e);
+    updateStatus("Error fetching data from "+uri+": "+e);
     return;
   }
   updateStatus("Got data from " + uri);
@@ -213,7 +245,7 @@ function crawl(uri) {
     p.parse(data, uri, uri);
   }
   catch (e) {
-    print ("Parse error on "+uri+": "+e);
+    updateStatus("Parse error on "+uri+": "+e);
     return;
   }
   ingest(kb,uri);  
@@ -242,7 +274,7 @@ var fetch = cutil.makeBoundedFunction(function(uri) {
 }, 10);
 
 // storage http://www.rajdeepd.com/articles/chrome/localstrg/LocalStorageSample.htm#section3
-print("Initializing...");
+updateStatus("Initializing...");
 waitfor {
   setup();
 }
@@ -255,7 +287,7 @@ print("All done");
 
 </script> 
 <style type="text/css">
-div.floating-menu {position:fixed;background:#eeddff;border:3px solid #ffcc00;margin:10 2em;padding:3px;width:90%;z-index:100;}
+div.floating-menu {position:fixed;background:#eeddff;border:3px solid #ffcc00;padding:3px;width:90%;z-index:100;}
 </style>
 </head> 
 
@@ -267,7 +299,7 @@ div.floating-menu {position:fixed;background:#eeddff;border:3px solid #ffcc00;ma
  docs: <span id="docs-count"></span> 
  factoids: <span id="triples-count"></span> 
  people: <span id="people-count"></span> 
- queue: <span id="sources-count"></span> 
+ <!-- queue: <span id="sources-count"></span> -->
  images: <span id="images-count"></span> <br/> 
  url: <span id="url"></span> <br/>
  status: <span id="status"></span>
