@@ -40,8 +40,8 @@ var aggregateTime = 0, requestCount = 0; // for timings
 
 var skip_list = [ 'kwark.org', // wonky data
 		'asemantics.com', // missing sites 
-		'impressive.net', // http auth (need to test handling)
-		'lagrange.net',   // ditto
+		'impressive.net', // http auth (need to test handling); on an image not foaf though
+		'lag-range.net',   // ditto
 		'geocities.com',  // RIP
 		'picdiary.com',   // awol
 		'localhost',      // 
@@ -195,6 +195,9 @@ function images(kb) {
 }
 
 function showpic(u) {
+
+ if (matches_skip_list(u) { return; } // no missing photos, http etc if we happen to know better. 
+
  var rand_no = Math.random();
  rand_no = rand_no * 10;
  rand_no = Math.ceil(rand_no);
