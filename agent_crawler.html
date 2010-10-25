@@ -1,0 +1,170 @@
+<!DOCTYPE html> 
+<html xmlns="http://www.w3.org/1999/xhtml"><head><script src="oni-apollo.js"></script><script src="tabulator/chrome/content/js/rdf/rdflib.js" type="application/javascript"></script><title>StrataScutter</title>
+<script type="text/sjs">
+
+//----------------------------------------------------------------------
+// CONFIG:
+
+// IT DOES NOT MAKE SENSE TO MAKE MORE AGENTS THAN CONCURRENT XML HTTP
+// REQUESTS ALLOWED BY THE BROWSER. IT WILL JUST CAUSE BOGUS TIMEOUTS!!
+var AGENT_COUNT = 6;
+
+// Timeout for our HTTP requests (in ms):
+var REQUEST_TIMEOUT = 4000;
+
+// If the average fanout (number of outgoing links from a document) is
+// too large, we could end up with runaway memory. MAX_PENDING_DOCS is
+// the maximum number of pending docs that we'll keep around before we
+// start limiting our crawling to a sample of the whole search space.
+var MAX_PENDING_DOCS = 50000;
+
+//----------------------------------------------------------------------
+// IMPORTS:
+
+var http = require('http');
+var cutil = require('cutil');
+var dom = require('dom');
+var debug = require('debug');
+var c = debug.console();
+
+//----------------------------------------------------------------------
+// UI STUFF:
+
+var counts = { queued:{}, docs:{}, triples:{}, errors:{}, timeouts:{},
+               fanout: {ave:'docs'},
+               request_duration: {ave:'docs'},
+               processing_duration: {ave:'docs'}
+             };
+for (var e in counts) {
+  counts[e].elem = document.getElementById(e);
+  counts[e].val = 0;
+}
+
+// increment given counter; update ui
+function increment(type, by) {
+  var count = counts[type];
+  count.val += (by || 1);
+  count.elem.innerHTML = count.ave ?
+    count.val/counts[count.ave].val : count.val;
+}
+function decrement(type) { increment(type, -1); }
+
+//----------------------------------------------------------------------
+// CRAWL QUEUE:
+
+// hash of seen docs; could prepopulate this with "known-bad" urls
+var seen = {};
+
+// queue holding the urls still to crawl:
+var crawl_queue = new (cutil.Queue)(MAX_PENDING_DOCS);
+
+// helper to add uris to the crawl queue:
+function fill_queue(uris) {
+  increment('fanout', uris.length);
+  for (var i=0,uri; uri=uris[i]; ++i)
+    if (!seen[uri]) {
+      seen[uri] = true;
+      waitfor {
+        crawl_queue.put(uri);
+        increment('queued');
+      }
+      or {
+        hold(1000);
+        c.log("Too many uris lined up for crawling");
+        return;
+      }
+    }
+}
+
+//----------------------------------------------------------------------
+// CRAWL AGENT:
+
+function crawl_agent() {
+  while (1) {
+    var uri = crawl_queue.get();
+    decrement('queued');
+
+    waitfor {
+      var start = new Date();
+      var data = http.xml(["util/p.php", {u: uri}]);
+    }
+    or {
+      hold(REQUEST_TIMEOUT);
+      increment('timeouts');
+      continue;
+    }
+    finally {
+      increment('docs');
+      increment('request_duration', new Date() - start);
+    }
+    
+    try {
+      var kb = new $rdf.IndexedFormula(); 
+      var p = new $rdf.RDFParser(kb);
+      var start = new Date();
+      p.parse(data, uri, uri);
+    }
+    catch (e) {
+      increment('errors');
+      // c.log(uri+": "+e);
+      continue;
+    }
+    finally {
+      increment('processing_duration', new Date() - start);
+    }
+    
+    increment('triples', kb.statements.length);
+
+    // Put outgoing urls onto our crawl queue:
+    var seealso = kb.statementsMatching(
+      undefined,
+      new $rdf.Symbol('http://www.w3.org/2000/01/rdf-schema#seeAlso'),
+      undefined);
+    var uris = [];
+    for (var i=0; i<seealso.length; ++i)
+      uris.push(seealso[i].object.uri);
+    fill_queue(uris);
+  }
+}
+
+//----------------------------------------------------------------------
+// MAIN PROGRAM LOGIC
+
+// fill queue with some urls to crawl:
+fill_queue([
+  'http://identi.ca/danbri/foaf', // biggest, typically slowest
+ 	'http://danbri.org/foaf.rdf', 
+	'http://www.tom.sfc.keio.ac.jp/~hagino/foaf.rdf', 
+	'http://www.w3.org/People/Berners-Lee/card.rdf', 
+	'http://swordfish.rdfweb.org/people/libby/rdfweb/webwho.xrdf',
+  'http://www.ldodds.com/ldodds.rdf',
+	'http://www.openlinksw.com/dataspace/person/kidehen@openlinksw.com/about.rdf'
+]);
+
+// Now run our crawler agents:
+var agents = [];
+for (var i=0; i< AGENT_COUNT; ++i)
+  agents.push(crawl_agent);
+
+waitfor {
+  cutil.waitforAll(agents);
+}
+or {
+  dom.waitforEvent('stop', 'click');
+}
+// XXX detect completion
+
+
+</script>
+</head>
+<body>
+  <button id="stop">Stop</button>
+  <div>Queued docs: <span id="queued"></span></div>
+  <div>Processed docs: <span id="docs"></span></div>
+  <div>Processed triples: <span id="triples"></span></div>
+  <div>Av. Fanout: <span id="fanout"></span></div>
+  <div>Av. Request duration: <span id="request_duration"></span></div>
+  <div>Av. Processing duration: <span id="processing_duration"></span></div>
+  <div>Errors: <span id="errors"></span></div>
+  <div>Timeouts: <span id="timeouts"></span></div>
+</body>
