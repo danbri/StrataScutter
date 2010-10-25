@@ -61,18 +61,15 @@ var crawl_queue = new (cutil.Queue)(MAX_PENDING_DOCS);
 // helper to add uris to the crawl queue:
 function fill_queue(uris) {
   increment('fanout', uris.length);
+  if (crawl_queue.count() >= MAX_PENDING_DOCS) {
+    //c.log("Too many uris lined up for crawling");
+    return;
+  }
   for (var i=0,uri; uri=uris[i]; ++i)
     if (!seen[uri]) {
       seen[uri] = true;
-      waitfor {
-        crawl_queue.put(uri);
-        increment('queued');
-      }
-      or {
-        hold(1000);
-        c.log("Too many uris lined up for crawling");
-        return;
-      }
+      crawl_queue.put(uri);
+      increment('queued');
     }
 }
 
