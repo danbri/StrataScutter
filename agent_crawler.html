@@ -1,7 +1,10 @@
 <!DOCTYPE html> 
-<html xmlns="http://www.w3.org/1999/xhtml"><head><script src="oni-apollo.js"></script><script src="tabulator/chrome/content/js/rdf/rdflib.js" type="application/javascript"></script><title>StrataScutter</title>
-<script type="text/sjs">
-
+  <html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+  <script src="apollo/oni-apollo.js"></script>
+  <script src="tabulator/chrome/content/js/rdf/rdflib.js"></script>
+  <title>StrataScutter</title>
+  <script type="text/sjs">
 //----------------------------------------------------------------------
 // CONFIG:
 
@@ -25,7 +28,7 @@ var http = require('http');
 var cutil = require('cutil');
 var dom = require('dom');
 var debug = require('debug');
-var c = debug.console();
+var c = debug.console({collapsed:false});
 
 //----------------------------------------------------------------------
 // UI STUFF:
@@ -33,7 +36,8 @@ var c = debug.console();
 var counts = { queued:{}, docs:{}, triples:{}, errors:{}, timeouts:{},
                fanout: {ave:'docs'},
                request_duration: {ave:'docs'},
-               processing_duration: {ave:'docs'}
+               processing_duration: {ave:'docs'},
+               size: {ave:'docs'}
              };
 for (var e in counts) {
   counts[e].elem = document.getElementById(e);
@@ -77,50 +81,78 @@ function fill_queue(uris) {
 // CRAWL AGENT:
 
 function crawl_agent() {
-  while (1) {
-    var uri = crawl_queue.get();
-    decrement('queued');
 
-    waitfor {
-      var start = new Date();
-      var data = http.xml(["util/p.php", {u: uri}]);
-    }
-    or {
-      hold(REQUEST_TIMEOUT);
-      increment('timeouts');
-      continue;
-    }
-    finally {
-      increment('docs');
-      increment('request_duration', new Date() - start);
-    }
-    
-    try {
-      var kb = new $rdf.IndexedFormula(); 
-      var p = new $rdf.RDFParser(kb);
-      var start = new Date();
-      p.parse(data, uri, uri);
-    }
-    catch (e) {
-      increment('errors');
-      // c.log(uri+": "+e);
-      continue;
-    }
-    finally {
-      increment('processing_duration', new Date() - start);
-    }
-    
-    increment('triples', kb.statements.length);
+  var status = document.createElement('div');
+  status.innerHTML = "<button>Kill</button> <span></span>";
+  document.getElementById('agents').appendChild(status);
 
-    // Put outgoing urls onto our crawl queue:
-    var seealso = kb.statementsMatching(
-      undefined,
-      new $rdf.Symbol('http://www.w3.org/2000/01/rdf-schema#seeAlso'),
-      undefined);
-    var uris = [];
-    for (var i=0; i<seealso.length; ++i)
-      uris.push(seealso[i].object.uri);
-    fill_queue(uris);
+  function update_status(s) {
+    status.children[1].innerHTML = s;
+    hold(0);
+  }
+  
+  waitfor {
+    while (1) {
+      update_status("Waiting for task");
+      var uri = crawl_queue.get();
+      decrement('queued');
+      
+      waitfor {
+        update_status("Waiting for "+uri);
+        var start = new Date();
+        var data = http.xml(["util/p.php", {u: uri}]);
+        if (!data) throw "No data";
+        increment('size', data.length/1024);
+      }
+      or {
+        hold(REQUEST_TIMEOUT);
+        increment('timeouts');
+        continue;
+      }
+      catch (e) {
+        increment('errors');
+        //c.log('error requesting '+uri+': '+e);
+      }
+      finally {
+        increment('docs');
+        increment('request_duration', new Date() - start);
+      }
+      
+      try {
+        update_status("Parsing "+uri);
+        var kb = new $rdf.IndexedFormula(); 
+        var p = new $rdf.RDFParser(kb);
+        var start = new Date();
+        p.parse(data, uri, uri);
+      }
+      catch (e) {
+        increment('errors');
+        // c.log(uri+": "+e);
+        continue;
+      }
+      finally {
+        increment('processing_duration', new Date() - start);
+      }
+      
+      increment('triples', kb.statements.length);
+      
+      // Put outgoing urls onto our crawl queue:
+      var seealso = kb.statementsMatching(
+        undefined,
+        new $rdf.Symbol('http://www.w3.org/2000/01/rdf-schema#seeAlso'),
+        undefined);
+      var uris = [];
+      for (var i=0; i<seealso.length; ++i)
+        uris.push(seealso[i].object.uri);
+      fill_queue(uris);
+    }
+  }
+  or {
+    // wait for kill button to be clicked
+    dom.waitforEvent(status.firstChild, 'click');
+  }
+  finally {
+    status.parentNode.removeChild(status);
   }
 }
 
@@ -138,30 +170,54 @@ fill_queue([
 	'http://www.openlinksw.com/dataspace/person/kidehen@openlinksw.com/about.rdf'
 ]);
 
-// Now run our crawler agents:
-var agents = [];
-for (var i=0; i< AGENT_COUNT; ++i)
-  agents.push(crawl_agent);
+// helper to start up agents in parallel:
+function spawn_agents(count) {
+  if (count <= 0)
+    dom.waitforEvent('add_agent', 'click');
+  waitfor {
+    crawl_agent();
+  }
+  and {
+    spawn_agents(--count);
+  }
+}
 
-waitfor {
-  cutil.waitforAll(agents);
+var stop_start = document.getElementById('stop_start_toggle');
+var agentui = document.getElementById('agentui');
+
+// Now run our crawler agents:
+while (1) {
+  dom.waitforEvent(stop_start, 'click');
+  waitfor {
+    agentui.style.visibility = "visible";
+    spawn_agents(AGENT_COUNT);
+  }
+  or {
+    stop_start.innerHTML = "Stop";
+    dom.waitforEvent(stop_start, 'click');
+  }
+  agentui.style.visibility = "hidden";
+  stop_start.innerHTML = "Restart";
 }
-or {
-  dom.waitforEvent('stop', 'click');
-}
-// XXX detect completion
 
 
 </script>
 </head>
 <body>
-  <button id="stop">Stop</button>
+  <button id="stop_start_toggle">Start</button>
   <div>Queued docs: <span id="queued"></span></div>
   <div>Processed docs: <span id="docs"></span></div>
   <div>Processed triples: <span id="triples"></span></div>
   <div>Av. Fanout: <span id="fanout"></span></div>
+  <div>Av. Doc Size (kB): <span id="size"></span></div>
   <div>Av. Request duration: <span id="request_duration"></span></div>
   <div>Av. Processing duration: <span id="processing_duration"></span></div>
   <div>Errors: <span id="errors"></span></div>
   <div>Timeouts: <span id="timeouts"></span></div>
+  <hr/>
+  <div id="agentui" style="visibility:hidden">
+    Agents: 
+    <div id="agents"></div>
+    <button id="add_agent">Add agent</button>
+  </div>
 </body>
